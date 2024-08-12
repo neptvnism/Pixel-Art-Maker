@@ -53,6 +53,8 @@
       <label for="gridHeight">Height:</label>
       <input type="number" id="gridHeight" value="50">
       <button id="updateGridBtn">Update Grid</button>
+      <label for="pixelSize">Pixel Size:</label>
+      <input type="number" id="pixelSize" value="10">
     </div>
     <canvas id="pixelCanvas" width="500" height="500"></canvas>
     <div class="color-palette">
@@ -62,6 +64,7 @@
       <div style="background-color: blue;"></div>
       <div style="background-color: green;"></div>
     </div>
+    <button id="eraserBtn">Eraser</button>
     <button id="saveBtn">Save</button>
   </div>
   <script>
@@ -72,26 +75,48 @@
     const gridWidthInput = document.getElementById('gridWidth');
     const gridHeightInput = document.getElementById('gridHeight');
     const updateGridBtn = document.getElementById('updateGridBtn');
+    const pixelSizeInput = document.getElementById('pixelSize');
+    const eraserBtn = document.getElementById('eraserBtn');
 
     let selectedColor = 'black';
     let gridWidth = 50;
     let gridHeight = 50;
+    let pixelSize = 10;
+    let pixelData = [];
+    let eraserActive = false; // Track eraser state
+
+    // Initialize pixelData
+    for (let i = 0; i < gridHeight; i++) {
+      pixelData[i] = new Array(gridWidth).fill(null);
+    }
 
     // Set up event listeners for color palette clicks
     colorPalette.addEventListener('click', (event) => {
       if (event.target.tagName === 'DIV') {
         selectedColor = event.target.style.backgroundColor;
+        eraserActive = false; // Deactivate eraser when selecting color
       }
+    });
+
+    // Set up event listener for eraser button
+    eraserBtn.addEventListener('click', () => {
+      eraserActive = !eraserActive; // Toggle eraser state
     });
 
     // Set up event listener for canvas clicks
     canvas.addEventListener('click', (event) => {
       const rect = canvas.getBoundingClientRect();
-      const x = Math.floor((event.clientX - rect.left) / 10); // Assuming 10px grid
-      const y = Math.floor((event.clientY - rect.top) / 10);
+      const x = Math.floor((event.clientX - rect.left) / pixelSize);
+      const y = Math.floor((event.clientY - rect.top) / pixelSize);
 
-      ctx.fillStyle = selectedColor;
-      ctx.fillRect(x * 10, y * 10, 10, 10); // Draw pixel
+      if (eraserActive) {
+        ctx.fillStyle = 'white'; // Use white as the eraser color
+        pixelData[y][x] = null; // Clear pixel data
+      } else {
+        ctx.fillStyle = selectedColor;
+        pixelData[y][x] = selectedColor;
+      }
+      ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
     });
 
     // Save button functionality
@@ -107,9 +132,27 @@
     updateGridBtn.addEventListener('click', () => {
       gridWidth = parseInt(gridWidthInput.value, 10) || 50;
       gridHeight = parseInt(gridHeightInput.value, 10) || 50;
-      canvas.width = gridWidth * 10;
-      canvas.height = gridHeight * 10;
-      // Redraw existing pixels (we'll implement this later)
+      pixelSize = parseInt(pixelSizeInput.value, 10) || 10;
+      canvas.width = gridWidth * pixelSize;
+      canvas.height = gridHeight * pixelSize;
+
+      // Redraw existing pixels
+      for (let y = 0; y < gridHeight; y++) {
+        for (let x = 0; x < gridWidth; x++) {
+          if (pixelData[y][x]) {
+            ctx.fillStyle = pixelData[y][x];
+            ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
+          }
+        }
+      }
+
+      // Update pixelData size if needed
+      if (pixelData.length < gridHeight || pixelData[0].length < gridWidth) {
+        pixelData = [];
+        for (let i = 0; i < gridHeight; i++) {
+          pixelData[i] = new Array(gridWidth).fill(null);
+        }
+      }
     });
   </script>
 </body>
