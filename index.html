@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Pixel Art Maker</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background-color: #f0f0f0;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    #pixelCanvas {
+      border: 1px solid black;
+    }
+
+    .color-palette {
+      display: flex;
+      margin-bottom: 10px;
+    }
+
+    .color-palette div {
+      width: 30px;
+      height: 30px;
+      border: 1px solid black;
+      margin: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Pixel Art Maker</h1>
+    <canvas id="pixelCanvas" width="500" height="500"></canvas>
+    <div class="color-palette">
+      <div style="background-color: black;"></div>
+      <div style="background-color: white;"></div>
+      <div style="background-color: red;"></div>
+      <div style="background-color: blue;"></div>
+      <div style="background-color: green;"></div>
+    </div>
+    <button id="saveBtn">Save</button>
+  </div>
+  <script>
+    const canvas = document.getElementById('pixelCanvas');
+    const ctx = canvas.getContext('2d');
+    const colorPalette = document.querySelector('.color-palette');
+    const saveBtn = document.getElementById('saveBtn');
+
+    let selectedColor = 'black';
+
+    // Set up event listeners for color palette clicks
+    colorPalette.addEventListener('click', (event) => {
+      if (event.target.tagName === 'DIV') {
+        selectedColor = event.target.style.backgroundColor;
+      }
+    });
+
+    // Set up event listener for canvas clicks
+    canvas.addEventListener('click', (event) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = Math.floor((event.clientX - rect.left) / 10); // Assuming 10px grid
+      const y = Math.floor((event.clientY - rect.top) / 10);
+
+      ctx.fillStyle = selectedColor;
+      ctx.fillRect(x * 10, y * 10, 10, 10); // Draw pixel
+    });
+
+    // Save button functionality (placeholder - will implement actual saving later)
+    saveBtn.addEventListener('click', () => {
+      alert('Save functionality not yet implemented!');
+    });
+
+  </script>
+</body>
+</html>
