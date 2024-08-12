@@ -54,9 +54,8 @@
       <input type="number" id="gridHeight" value="50">
       <button id="updateGridBtn">Update Grid</button>
       <label for="pixelSize">Pixel Size:</label>
-      <input type="number" id="pixelSize" value="10">
-      <label for="brushSize">Brush Size:</label>
-      <input type="number" id="brushSize" value="1" min="1">
+      <input type="number" id="pixelSize" value="10" min="1">
+      <button id="changeSizeBtn">Change Size</button>
     </div>
     <canvas id="pixelCanvas" width="500" height="500"></canvas>
     <div class="color-palette">
@@ -65,9 +64,15 @@
       <div style="background-color: red;"></div>
       <div style="background-color: blue;"></div>
       <div style="background-color: green;"></div>
+      <div style="background-color: orange;"></div>
+      <div style="background-color: yellow;"></div>
+      <div style="background-color: purple;"></div>
+      <div style="background-color: pink;"></div>
+      <div style="background-color: cyan;"></div>
+      <div style="background-color: magenta;"></div>
     </div>
     <button id="eraserBtn">Eraser</button>
-    <button id="undoBtn">Undo</button>
+    <button id="fillBtn">Fill</button>
     <button id="saveBtn">Save</button>
   </div>
   <script>
@@ -80,19 +85,18 @@
     const updateGridBtn = document.getElementById('updateGridBtn');
     const pixelSizeInput = document.getElementById('pixelSize');
     const eraserBtn = document.getElementById('eraserBtn');
-    const undoBtn = document.getElementById('undoBtn');
-    const brushSizeInput = document.getElementById('brushSize');
+    const fillBtn = document.getElementById('fillBtn');
+    const changeSizeBtn = document.getElementById('changeSizeBtn');
 
     let selectedColor = 'black';
     let gridWidth = 50;
     let gridHeight = 50;
     let pixelSize = 10;
-    let brushSize = 1; // Default brush size
-    let pixelData = [];
+    let pixelData = []; 
     let eraserActive = false;
-    let undoStack = []; // Stack to store undo actions
+    let isDrawing = false;
 
-    // Initialize pixelData
+    // Initialize pixelData (now with actual pixel coordinates)
     for (let i = 0; i < gridHeight; i++) {
       pixelData[i] = new Array(gridWidth).fill(null);
     }
@@ -110,48 +114,52 @@
       eraserActive = !eraserActive;
     });
 
-    // Set up event listener for undo button
-    undoBtn.addEventListener('click', () => {
-      if (undoStack.length > 0) {
-        const lastAction = undoStack.pop();
-        const [x, y, color] = lastAction;
-
-        if (color) {
-          ctx.fillStyle = color;
+    // Fill button functionality
+    fillBtn.addEventListener('click', () => {
+      for (let y = 0; y < gridHeight; y++) {
+        for (let x = 0; x < gridWidth; x++) {
+          ctx.fillStyle = selectedColor;
           ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
-          pixelData[y][x] = color;
-        } else {
-          ctx.fillStyle = 'white'; // Clear the pixel
-          ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
-          pixelData[y][x] = null;
+          pixelData[y][x] = selectedColor;
         }
       }
     });
 
-    // Set up event listener for canvas clicks
-    canvas.addEventListener('click', (event) => {
-      const rect = canvas.getBoundingClientRect();
-      const x = Math.floor((event.clientX - rect.left) / pixelSize);
-      const y = Math.floor((event.clientY - rect.top) / pixelSize);
+    // Start drawing when mouse is pressed down
+    canvas.addEventListener('mousedown', (event) => {
+      isDrawing = true;
+      draw(event);
+    });
 
-      // Store previous pixel data for undo
-      undoStack.push([x, y, pixelData[y][x]]); 
+    // Stop drawing when mouse is released
+    canvas.addEventListener('mouseup', () => {
+      isDrawing = false;
+    });
+
+    // Draw while mouse is moved
+    canvas.addEventListener('mousemove', (event) => {
+      if (isDrawing) {
+        draw(event);
+      }
+    });
+
+    // Draw function
+    function draw(event) {
+      const rect = canvas.getBoundingClientRect();
+      const x = Math.floor((event.clientX - rect.left)); // No need to divide by pixelSize here
+      const y = Math.floor((event.clientY - rect.top)); // No need to divide by pixelSize here
 
       if (eraserActive) {
         ctx.fillStyle = 'white';
-        pixelData[y][x] = null;
+        pixelData[Math.floor(y / pixelSize)][Math.floor(x / pixelSize)] = null;
       } else {
         ctx.fillStyle = selectedColor;
-        pixelData[y][x] = selectedColor;
+        pixelData[Math.floor(y / pixelSize)][Math.floor(x / pixelSize)] = selectedColor;
       }
 
       // Draw the pixel with brush size
-      for (let i = 0; i < brushSize; i++) {
-        for (let j = 0; j < brushSize; j++) {
-          ctx.fillRect((x + i) * pixelSize, (y + j) * pixelSize, pixelSize, pixelSize);
-        }
-      }
-    });
+      ctx.fillRect(x, y, pixelSize, pixelSize);
+    }
 
     // Save button functionality
     saveBtn.addEventListener('click', () => {
@@ -162,15 +170,13 @@
       link.click();
     });
 
-    // Update grid functionality
+    // Update grid functionality (only changes pixel size, not canvas size)
     updateGridBtn.addEventListener('click', () => {
       gridWidth = parseInt(gridWidthInput.value, 10) || 50;
       gridHeight = parseInt(gridHeightInput.value, 10) || 50;
       pixelSize = parseInt(pixelSizeInput.value, 10) || 10;
-      canvas.width = gridWidth * pixelSize;
-      canvas.height = gridHeight * pixelSize;
 
-      // Redraw existing pixels
+      // Redraw existing pixels with new pixel size
       for (let y = 0; y < gridHeight; y++) {
         for (let x = 0; x < gridWidth; x++) {
           if (pixelData[y][x]) {
@@ -179,12 +185,19 @@
           }
         }
       }
+    });
 
-      // Update pixelData size if needed
-      if (pixelData.length < gridHeight || pixelData[0].length < gridWidth) {
-        pixelData = [];
-        for (let i = 0; i < gridHeight; i++) {
-          pixelData[i] = new Array(gridWidth).fill(null);
+    // Change Size button functionality
+    changeSizeBtn.addEventListener('click', () => {
+      pixelSize = parseInt(pixelSizeInput.value, 10) || 10; // Get new size
+
+      // Redraw existing pixels with new pixel size
+      for (let y = 0; y < gridHeight; y++) {
+        for (let x = 0; x < gridWidth; x++) {
+          if (pixelData[y][x]) {
+            ctx.fillStyle = pixelData[y][x];
+            ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
+          }
         }
       }
     });
