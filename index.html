@@ -55,6 +55,8 @@
       <button id="updateGridBtn">Update Grid</button>
       <label for="pixelSize">Pixel Size:</label>
       <input type="number" id="pixelSize" value="10">
+      <label for="brushSize">Brush Size:</label>
+      <input type="number" id="brushSize" value="1" min="1">
     </div>
     <canvas id="pixelCanvas" width="500" height="500"></canvas>
     <div class="color-palette">
@@ -65,6 +67,7 @@
       <div style="background-color: green;"></div>
     </div>
     <button id="eraserBtn">Eraser</button>
+    <button id="undoBtn">Undo</button>
     <button id="saveBtn">Save</button>
   </div>
   <script>
@@ -77,13 +80,17 @@
     const updateGridBtn = document.getElementById('updateGridBtn');
     const pixelSizeInput = document.getElementById('pixelSize');
     const eraserBtn = document.getElementById('eraserBtn');
+    const undoBtn = document.getElementById('undoBtn');
+    const brushSizeInput = document.getElementById('brushSize');
 
     let selectedColor = 'black';
     let gridWidth = 50;
     let gridHeight = 50;
     let pixelSize = 10;
+    let brushSize = 1; // Default brush size
     let pixelData = [];
-    let eraserActive = false; // Track eraser state
+    let eraserActive = false;
+    let undoStack = []; // Stack to store undo actions
 
     // Initialize pixelData
     for (let i = 0; i < gridHeight; i++) {
@@ -94,13 +101,31 @@
     colorPalette.addEventListener('click', (event) => {
       if (event.target.tagName === 'DIV') {
         selectedColor = event.target.style.backgroundColor;
-        eraserActive = false; // Deactivate eraser when selecting color
+        eraserActive = false;
       }
     });
 
     // Set up event listener for eraser button
     eraserBtn.addEventListener('click', () => {
-      eraserActive = !eraserActive; // Toggle eraser state
+      eraserActive = !eraserActive;
+    });
+
+    // Set up event listener for undo button
+    undoBtn.addEventListener('click', () => {
+      if (undoStack.length > 0) {
+        const lastAction = undoStack.pop();
+        const [x, y, color] = lastAction;
+
+        if (color) {
+          ctx.fillStyle = color;
+          ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
+          pixelData[y][x] = color;
+        } else {
+          ctx.fillStyle = 'white'; // Clear the pixel
+          ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
+          pixelData[y][x] = null;
+        }
+      }
     });
 
     // Set up event listener for canvas clicks
@@ -109,14 +134,23 @@
       const x = Math.floor((event.clientX - rect.left) / pixelSize);
       const y = Math.floor((event.clientY - rect.top) / pixelSize);
 
+      // Store previous pixel data for undo
+      undoStack.push([x, y, pixelData[y][x]]); 
+
       if (eraserActive) {
-        ctx.fillStyle = 'white'; // Use white as the eraser color
-        pixelData[y][x] = null; // Clear pixel data
+        ctx.fillStyle = 'white';
+        pixelData[y][x] = null;
       } else {
         ctx.fillStyle = selectedColor;
         pixelData[y][x] = selectedColor;
       }
-      ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
+
+      // Draw the pixel with brush size
+      for (let i = 0; i < brushSize; i++) {
+        for (let j = 0; j < brushSize; j++) {
+          ctx.fillRect((x + i) * pixelSize, (y + j) * pixelSize, pixelSize, pixelSize);
+        }
+      }
     });
 
     // Save button functionality
