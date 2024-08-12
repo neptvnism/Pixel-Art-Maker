@@ -34,11 +34,26 @@
       margin: 5px;
       cursor: pointer;
     }
+
+    .grid-controls {
+      margin-bottom: 10px;
+    }
+
+    .grid-controls label {
+      margin-right: 5px;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>Pixel Art Maker</h1>
+    <div class="grid-controls">
+      <label for="gridWidth">Width:</label>
+      <input type="number" id="gridWidth" value="50">
+      <label for="gridHeight">Height:</label>
+      <input type="number" id="gridHeight" value="50">
+      <button id="updateGridBtn">Update Grid</button>
+    </div>
     <canvas id="pixelCanvas" width="500" height="500"></canvas>
     <div class="color-palette">
       <div style="background-color: black;"></div>
@@ -54,8 +69,13 @@
     const ctx = canvas.getContext('2d');
     const colorPalette = document.querySelector('.color-palette');
     const saveBtn = document.getElementById('saveBtn');
+    const gridWidthInput = document.getElementById('gridWidth');
+    const gridHeightInput = document.getElementById('gridHeight');
+    const updateGridBtn = document.getElementById('updateGridBtn');
 
     let selectedColor = 'black';
+    let gridWidth = 50;
+    let gridHeight = 50;
 
     // Set up event listeners for color palette clicks
     colorPalette.addEventListener('click', (event) => {
@@ -74,11 +94,23 @@
       ctx.fillRect(x * 10, y * 10, 10, 10); // Draw pixel
     });
 
-    // Save button functionality (placeholder - will implement actual saving later)
+    // Save button functionality
     saveBtn.addEventListener('click', () => {
-      alert('Save functionality not yet implemented!');
+      const dataURL = canvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.href = dataURL;
+      link.download = 'pixel-art.png';
+      link.click();
     });
 
+    // Update grid functionality
+    updateGridBtn.addEventListener('click', () => {
+      gridWidth = parseInt(gridWidthInput.value, 10) || 50;
+      gridHeight = parseInt(gridHeightInput.value, 10) || 50;
+      canvas.width = gridWidth * 10;
+      canvas.height = gridHeight * 10;
+      // Redraw existing pixels (we'll implement this later)
+    });
   </script>
 </body>
 </html>
